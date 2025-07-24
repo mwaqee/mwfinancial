@@ -15,15 +15,13 @@ pipeline {
     stage('Deploy CloudFormation') {
       steps {
         script {
-          docker.image('amazon/aws-cli:2.15.14').inside {
-            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
-              sh '''
-                aws cloudformation deploy \
-                  --template-file cloudformation/s3-bucket.yaml \
-                  --stack-name my-iac-stack \
-                  --capabilities CAPABILITY_NAMED_IAM
-              '''
-            }
+          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
+            sh '''
+              aws cloudformation deploy \
+                --template-file cloudformation/s3-bucket.yaml \
+                --stack-name my-iac-stack \
+                --capabilities CAPABILITY_NAMED_IAM
+            '''
           }
         }
       }
