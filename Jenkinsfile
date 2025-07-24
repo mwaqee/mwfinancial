@@ -1,7 +1,7 @@
 pipeline {
   agent {
     docker {
-      image 'amazon/aws-cli:2.15.14' // or latest AWS CLI image
+      image 'amazon/aws-cli:2.15.14'
     }
   }
 
