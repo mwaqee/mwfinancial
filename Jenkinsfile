@@ -15,15 +15,8 @@ pipeline {
     stage('Deploy CloudFormation') {
       steps {
         script {
-          withCredentials([
-            string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-            string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
-          ]) {
+          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
             sh '''
-              echo "Deploying to region: $AWS_REGION"
-              aws configure set aws-access-key $AWS_ACCESS_KEY_ID
-              aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-              aws configure set region $AWS_REGION
               aws cloudformation deploy \
                 --region us-east-1 \
                 --template-file cloudformation/s3-bucket.yaml \
