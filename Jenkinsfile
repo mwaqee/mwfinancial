@@ -1,9 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      image 'amazon/aws-cli:2.15.14'
-    }
-  }
+  agent any
 
   environment {
     AWS_DEFAULT_REGION = 'us-east-1'
