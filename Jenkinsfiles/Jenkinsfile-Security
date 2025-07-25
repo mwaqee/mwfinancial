@@ -7,6 +7,18 @@ pipeline {
   }
 
   stages {
+    stage('Debug AWS CLI Config') {
+      steps {
+        script {
+          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
+            sh '''
+              echo "✅ Debugging AWS CLI Configuration"
+              aws configure list
+            '''
+          }
+        }
+      }
+    }
     stage('Deploy Security Resources') {
       steps {
         script {
