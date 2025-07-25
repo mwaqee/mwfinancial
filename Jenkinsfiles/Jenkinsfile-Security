@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     AWS_DEFAULT_REGION = 'us-east-1'
-    VPC_ID = 'vpc-0f00b6cff3328c661'
+    VPC_ID = 'vpc-0037e5ab858be989a'
   }
 
   stages {
