@@ -20,6 +20,7 @@ pipeline {
                   Subnet1=subnet-xxxxxxxx \
                   Subnet2=subnet-yyyyyyyy \
                   SecurityGroupId=sg-zzzzzzzz
+                  ExecutionRoleArn=arn:aws:iam::052003592003:role/ecsTaskExecutionRole
             '''
           }
         }
