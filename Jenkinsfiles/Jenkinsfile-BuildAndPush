@@ -1,0 +1,40 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_DEFAULT_REGION = 'us-east-1'
+    IMAGE_NAME = 'account-service'
+    ECR_REPO = '<your-account-id>.dkr.ecr.us-east-1.amazonaws.com/account-service'
+  }
+
+  stages {
+    stage('Build Docker Image') {
+      steps {
+        sh 'docker build -t $IMAGE_NAME .'
+      }
+    }
+
+    stage('Login to ECR & Push') {
+      steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
+          sh '''
+            aws ecr get-login-password --region $AWS_DEFAULT_REGION | \
+              docker login --username AWS --password-stdin $ECR_REPO
+
+            docker tag $IMAGE_NAME:latest $ECR_REPO:latest
+            docker push $ECR_REPO:latest
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo '✅ Docker image built and pushed to ECR.'
+    }
+    failure {
+      echo '❌ Docker image build or push failed.'
+    }
+  }
+}
