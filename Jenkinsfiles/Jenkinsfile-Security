@@ -3,23 +3,22 @@ pipeline {
 
   environment {
     AWS_DEFAULT_REGION = 'us-east-1'
+    VPC_ID = 'vpc-0f00b6cff3328c661'
   }
 
   stages {
-    stage('Provision Security Infrastructure') {
+    stage('Deploy Security Resources') {
       steps {
         script {
-          withCredentials([[
-            $class: 'AmazonWebServicesCredentialsBinding',
-            credentialsId: 'aws-access-key'
-          ]]) {
-            sh '''
+          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
+            sh """
               aws cloudformation deploy \
-                --region ${AWS_DEFAULT_REGION} \
+                --region ${env.AWS_DEFAULT_REGION} \
                 --template-file cloudformation/security.yaml \
                 --stack-name security-stack \
-                --capabilities CAPABILITY_NAMED_IAM
-            '''
+                --capabilities CAPABILITY_NAMED_IAM \
+                --parameter-overrides VpcId=${env.VPC_ID}
+            """
           }
         }
       }
@@ -28,10 +27,10 @@ pipeline {
 
   post {
     success {
-      echo '✅ Security infrastructure provisioned successfully.'
+      echo '✅ Security resources deployed successfully.'
     }
     failure {
-      echo '❌ Security infrastructure provisioning failed.'
+      echo '❌ Security resources deployment failed.'
     }
   }
 }
