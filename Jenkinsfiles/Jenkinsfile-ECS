@@ -20,7 +20,7 @@ pipeline {
                   VpcId=vpc-0037e5ab858be989a \
                   Subnet1=subnet-0b541415acbfe0250 \
                   Subnet2=subnet-0b427c0f0818db133 \
-                  SecurityGroupId=sg-zzzzzzzz \
+                  SecurityGroupId=sg-01c8efb65d10bbd27 \
                   ExecutionRoleArn=arn:aws:iam::052003592003:role/ecsTaskExecutionRole
             '''
           }
