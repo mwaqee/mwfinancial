@@ -1,0 +1,36 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_DEFAULT_REGION = 'us-east-1'
+    SERVICE_STACK = 'account-service-stack'
+    TEMPLATE_FILE = 'cloudformation/ecs-service.yaml'
+  }
+
+  stages {
+    stage('Deploy Service') {
+      steps {
+        script {
+          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
+            sh '''
+              aws cloudformation deploy \
+                --region $AWS_DEFAULT_REGION \
+                --template-file $TEMPLATE_FILE \
+                --stack-name $SERVICE_STACK \
+                --capabilities CAPABILITY_NAMED_IAM
+            '''
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo '✅ Service deployed successfully.'
+    }
+    failure {
+      echo '❌ Service deployment failed.'
+    }
+  }
+}
