@@ -1,66 +1,70 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ECS Cluster, Task Definition, Service for Account Service
+Description: ECS Cluster and Task Definition for Account Service
 
 Parameters:
   VpcId:
     Type: String
+    Description: VPC ID
   Subnet1:
     Type: String
+    Description: Subnet 1 ID
   Subnet2:
     Type: String
+    Description: Subnet 2 ID
   SecurityGroupId:
     Type: String
+    Description: Security Group ID
+  ExecutionRoleArn:
+    Type: String
+    Description: ARN of the existing ECS task execution role
 
 Resources:
 
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: mwfinancial-cluster
+      ClusterName: mwfinancial-ecs-cluster
 
-  TaskExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ecs-tasks.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-      RoleName: ecsTaskExecutionRole
-
-  TaskDefinition:
+  AccountTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: account-service-task
-      Cpu: "256"
-      Memory: "512"
+      Cpu: '256'
+      Memory: '512'
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      ExecutionRoleArn: !Ref ExecutionRoleArn
       ContainerDefinitions:
-        - Name: account-service
-          Image: 052003592003.dkr.ecr.us-east-1.amazonaws.com/account-service
+        - Name: account-service-container
+          Image: 052003592003.dkr.ecr.us-east-1.amazonaws.com/account-service:latest
           PortMappings:
             - ContainerPort: 8080
+          Essential: true
 
-  ECSService:
+  AccountService:
     Type: AWS::ECS::Service
     DependsOn: ECSCluster
     Properties:
+      ServiceName: account-service
       Cluster: !Ref ECSCluster
       LaunchType: FARGATE
       DesiredCount: 1
-      TaskDefinition: !Ref TaskDefinition
+      TaskDefinition: !Ref AccountTaskDefinition
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref SecurityGroupId
           Subnets:
             - !Ref Subnet1
             - !Ref Subnet2
-          SecurityGroups:
-            - !Ref SecurityGroupId
+
+Outputs:
+  ECSClusterName:
+    Description: Name of the ECS Cluster
+    Value: !Ref ECSCluster
+
+  AccountServiceName:
+    Description: ECS Service Name
+    Value: !Ref AccountService
