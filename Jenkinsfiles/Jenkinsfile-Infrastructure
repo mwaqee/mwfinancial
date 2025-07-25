@@ -1,0 +1,34 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_DEFAULT_REGION = 'us-east-1'
+  }
+
+  stages {
+    stage('Provision Infrastructure') {
+      steps {
+        script {
+          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
+            sh '''
+              aws cloudformation deploy \
+                --region us-east-1 \
+                --template-file cloudformation/network.yaml \
+                --stack-name my-network-stack \
+                --capabilities CAPABILITY_NAMED_IAM
+            '''
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo '✅ Infrastructure provisioned.'
+    }
+    failure {
+      echo '❌ Infrastructure provisioning failed.'
+    }
+  }
+}
