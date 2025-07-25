@@ -11,6 +11,7 @@ pipeline {
         script {
           withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
             sh '''
+              echo "✅ Deploying ECS Resources"
               aws cloudformation deploy \
                 --template-file cloudformation/ecs.yaml \
                 --stack-name ecs-stack \
@@ -19,7 +20,7 @@ pipeline {
                   VpcId=vpc-0037e5ab858be989a \
                   Subnet1=subnet-xxxxxxxx \
                   Subnet2=subnet-yyyyyyyy \
-                  SecurityGroupId=sg-zzzzzzzz
+                  SecurityGroupId=sg-zzzzzzzz \
                   ExecutionRoleArn=arn:aws:iam::052003592003:role/ecsTaskExecutionRole
             '''
           }
