@@ -18,8 +18,8 @@ pipeline {
                 --capabilities CAPABILITY_NAMED_IAM \
                 --parameter-overrides \
                   VpcId=vpc-0037e5ab858be989a \
-                  Subnet1=subnet-xxxxxxxx \
-                  Subnet2=subnet-yyyyyyyy \
+                  Subnet1=subnet-0b541415acbfe0250 \
+                  Subnet2=subnet-0b427c0f0818db133 \
                   SecurityGroupId=sg-zzzzzzzz \
                   ExecutionRoleArn=arn:aws:iam::052003592003:role/ecsTaskExecutionRole
             '''
