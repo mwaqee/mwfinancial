@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECR repository for MWFinancial services
+
+Resources:
+  AccountServiceRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: account-service
+      ImageScanningConfiguration:
+        scanOnPush: true
+      Tags:
+        - Key: Name
+          Value: account-service-ecr
+
+Outputs:
+  AccountServiceRepositoryUri:
+    Value: !GetAtt AccountServiceRepository.RepositoryUri
+    Export:
+      Name: AccountServiceRepositoryUri
