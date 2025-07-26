@@ -10,9 +10,7 @@ pipeline {
   stages {
     stage('Checkout Code') {
       steps {
-          cleanWs()
-          git branch: 'main',
-            url: 'https://github.com/mwaqee/mwfinancial.git'
+        checkout scm
       }
     }
 
