@@ -1,0 +1,54 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION = 'us-east-1'
+    ECR_REPO = '052003592003.dkr.ecr.us-east-1.amazonaws.com/account-service'
+    IMAGE_TAG = 'latest'
+  }
+
+  stages {
+    stage('Checkout Code') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        script {
+          docker.build("account-service:${IMAGE_TAG}", './account-service')
+        }
+      }
+    }
+
+    stage('Login to ECR') {
+      steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
+          sh '''
+            aws ecr get-login-password --region $AWS_REGION | \
+            docker login --username AWS --password-stdin $ECR_REPO
+          '''
+        }
+      }
+    }
+
+    stage('Tag & Push Docker Image') {
+      steps {
+        script {
+          docker.tag("account-service:${IMAGE_TAG}", "${ECR_REPO}:${IMAGE_TAG}")
+          docker.push("${ECR_REPO}:${IMAGE_TAG}")
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo '✅ Docker image built and pushed to ECR.'
+    }
+    failure {
+      echo '❌ Docker image push failed.'
+    }
+  }
+}
