@@ -10,15 +10,14 @@ pipeline {
   stages {
     stage('Checkout Code') {
       steps {
-        checkout scm
+        git branch: 'main',
+            url: 'https://github.com/mwaqee/mwfinancial.git'
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        script {
-          docker.build("account-service:${IMAGE_TAG}", './account-service')
-        }
+        sh 'docker build -t account-service:${IMAGE_TAG} ./account-service'
       }
     }
 
@@ -27,7 +26,7 @@ pipeline {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
           sh '''
             aws ecr get-login-password --region $AWS_REGION | \
-            docker login --username AWS --password-stdin $ECR_REPO
+            docker login --username AWS --password-stdin 052003592003.dkr.ecr.us-east-1.amazonaws.com
           '''
         }
       }
@@ -35,10 +34,10 @@ pipeline {
 
     stage('Tag & Push Docker Image') {
       steps {
-        script {
-          docker.tag("account-service:${IMAGE_TAG}", "${ECR_REPO}:${IMAGE_TAG}")
-          docker.push("${ECR_REPO}:${IMAGE_TAG}")
-        }
+        sh '''
+          docker tag account-service:${IMAGE_TAG} ${ECR_REPO}:${IMAGE_TAG}
+          docker push ${ECR_REPO}:${IMAGE_TAG}
+        '''
       }
     }
   }
