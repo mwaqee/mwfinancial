@@ -1,53 +1,11 @@
 pipeline {
-  agent any
-
-  environment {
-    AWS_REGION = 'us-east-1'
-    ECR_REPO = '052003592003.dkr.ecr.us-east-1.amazonaws.com/account-service'
-    IMAGE_TAG = 'latest'
-  }
-
-  stages {
-    stage('Checkout Code') {
-      steps {
-        git branch: 'main',
-            url: 'https://github.com/mwaqee/mwfinancial.git'
-      }
-    }
-
-    stage('Build Docker Image') {
-      steps {
-        sh 'docker build -t account-service:${IMAGE_TAG} ./account-service'
-      }
-    }
-
-    stage('Login to ECR') {
-      steps {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
-          sh '''
-            aws ecr get-login-password --region $AWS_REGION | \
-            docker login --username AWS --password-stdin 052003592003.dkr.ecr.us-east-1.amazonaws.com
-          '''
+    agent any
+    stages {
+        stage('Test Git') {
+            steps {
+                git branch: 'main', url: 'https://github.com/mwaqee/mwfinancial.git'
+                sh 'ls -la'
+            }
         }
-      }
     }
-
-    stage('Tag & Push Docker Image') {
-      steps {
-        sh '''
-          docker tag account-service:${IMAGE_TAG} ${ECR_REPO}:${IMAGE_TAG}
-          docker push ${ECR_REPO}:${IMAGE_TAG}
-        '''
-      }
-    }
-  }
-
-  post {
-    success {
-      echo '✅ Docker image built and pushed to ECR.'
-    }
-    failure {
-      echo '❌ Docker image push failed.'
-    }
-  }
 }
