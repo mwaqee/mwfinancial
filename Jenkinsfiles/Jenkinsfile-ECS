@@ -2,28 +2,67 @@ pipeline {
   agent any
 
   environment {
-    AWS_DEFAULT_REGION = 'us-east-1'
+    AWS_REGION = 'us-east-1'
+    AWS_ACCOUNT_ID = '052003592003'
+    ECR_REPO = 'account-service'
+    IMAGE_TAG = 'latest'
+    IMAGE_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}"
+    CLUSTER_NAME = 'mwfinancial-ecs-cluster'
+    SERVICE_NAME = 'account-service'
+    TASK_FAMILY = 'account-service-task'
+    TASK_ROLE_ARN = 'arn:aws:iam::052003592003:role/ecsTaskExecutionRole'
   }
 
   stages {
-    stage('Deploy ECS Resources') {
+    stage('Register New Task Definition') {
       steps {
-        script {
-          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
-            sh '''
-              echo "✅ Deploying ECS Resources"
-              aws cloudformation deploy \
-                --template-file cloudformation/ecs.yaml \
-                --stack-name ecs-stack \
-                --capabilities CAPABILITY_NAMED_IAM \
-                --parameter-overrides \
-                  VpcId=vpc-0037e5ab858be989a \
-                  Subnet1=subnet-0b541415acbfe0250 \
-                  Subnet2=subnet-0b427c0f0818db133 \
-                  SecurityGroupId=sg-01c8efb65d10bbd27 \
-                  ExecutionRoleArn=arn:aws:iam::052003592003:role/ecsTaskExecutionRole
-            '''
-          }
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
+          sh '''
+            echo "✅ Registering new ECS Task Definition with latest image..."
+
+            cat <<EOF > taskdef.json
+            {
+              "family": "${TASK_FAMILY}",
+              "networkMode": "awsvpc",
+              "executionRoleArn": "${TASK_ROLE_ARN}",
+              "requiresCompatibilities": ["FARGATE"],
+              "cpu": "256",
+              "memory": "512",
+              "containerDefinitions": [
+                {
+                  "name": "${ECR_REPO}-container",
+                  "image": "${IMAGE_URI}",
+                  "essential": true,
+                  "portMappings": [
+                    { "containerPort": 8080, "protocol": "tcp" }
+                  ]
+                }
+              ]
+            }
+EOF
+
+            aws ecs register-task-definition --cli-input-json file://taskdef.json
+          '''
+        }
+      }
+    }
+
+    stage('Update ECS Service to New Revision') {
+      steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key']]) {
+          sh '''
+            echo "✅ Fetching latest task revision..."
+            REVISION=$(aws ecs describe-task-definition --task-definition ${TASK_FAMILY} --query "taskDefinition.revision" --output text)
+
+            echo "✅ Updating ECS Service to use task revision $REVISION..."
+            aws ecs update-service \
+              --cluster ${CLUSTER_NAME} \
+              --service ${SERVICE_NAME} \
+              --task-definition ${TASK_FAMILY}:$REVISION
+
+            echo "✅ Waiting for ECS service to stabilize..."
+            aws ecs wait services-stable --cluster ${CLUSTER_NAME} --services ${SERVICE_NAME}
+          '''
         }
       }
     }
@@ -31,10 +70,10 @@ pipeline {
 
   post {
     success {
-      echo '✅ ECS resources provisioned.'
+      echo "✅ ECS Deployment Successful!"
     }
     failure {
-      echo '❌ ECS provisioning failed.'
+      echo "❌ ECS Deployment Failed!"
     }
   }
 }
